@@ -13,10 +13,13 @@
 enum
 {
 	STIMER1 = 0,
+	STIMER2 = 1,
 	STIMER_MAX
 };
 
-#define ONESECTIMER			STIMER1
+#define ONE_SEC_TIMER			STIMER1
+#define TEN_MILLSEC_TIMER	STIMER2
+
 
 void STIMER_Init(void (*funcptr)(void));
 int8_t STIMER_StartTimer (uint8_t soft_id, uint16_t ticks, void (*funcptr) (void));
@@ -26,5 +29,6 @@ void STIMER_KillTimer (uint8_t soft_id);
 void STIMER_PollHandler(void);
 
 void STIMER_OneSectimerExpired(void);
+void STIMER_TenMillsectimerExpired(void);
 
 #endif

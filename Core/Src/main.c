@@ -59,6 +59,7 @@ static void MX_TIM3_Init(void);
 /* USER CODE BEGIN 0 */
 
 extern uint8_t OneSecondExpired;
+extern uint8_t TenMillisecondsExpired;
 
 /* USER CODE END 0 */
 
@@ -102,15 +103,16 @@ int main(void)
   /* USER CODE BEGIN 2 */
   STATUS_LEDS_Init();
   delayInit();
-  RECEIVER_Init();
+//  RECEIVER_Init();
   SYSTEM_InitSystick(100);
 //  BUZZER_Init();
-//  DSHOT_Init(DSHOT600);
+  DSHOT_Init(DSHOT600);
   uint16_t data[16] = {500, 0, 0, 0};
-  uint32_t test = 0, result = 0;
 
   STIMER_Init(NULL);
   STIMER_OneSectimerExpired();
+
+  BUZZER_BeepXTimers(2);
 
   /* USER CODE END 2 */
   /* Infinite loop */
@@ -119,14 +121,14 @@ int main(void)
   {
   	RECEIVER_ProcessCapturedValues();
 
+		DSHOT_Write(data);
+		delayMicros(100);
+
   	if(OneSecondExpired)
   	{
   		OneSecondExpired = FALSE;
   		LED_G_TOGGLE;
   	}
-//  	delayMillis(10);
-//  	DSHOT_Write(data);
-//  	BUZZER_BeepXTimers(5);
 
     /* USER CODE END WHILE */
 

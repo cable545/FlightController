@@ -41,6 +41,6 @@ void BUZZER_BeepXTimers(uint32_t cntBeeps)
 	for(int i = cntBeeps; i > 0; i--)
 	{
 		BUZZER_Beep();
-		delayMicros(500000);
+		delayMillis(1000);
 	}
 }

@@ -17,6 +17,7 @@ static void (*pSTIMER[STIMER_MAX]) (void);
 static volatile uint16_t Ctr[STIMER_MAX];
 
 uint8_t OneSecondExpired;
+uint8_t TenMillisecondsExpired;
 
 /**
   * @brief initialise the software STIMER module
@@ -120,6 +121,12 @@ void STIMER_PollHandler(void)
 
 void STIMER_OneSectimerExpired(void)
 {
-	STIMER_StartTimer(ONESECTIMER, (uint16_t)10000, STIMER_OneSectimerExpired);
+	STIMER_StartTimer(ONE_SEC_TIMER, (uint16_t)10000, STIMER_OneSectimerExpired);
 	OneSecondExpired = TRUE;
+}
+
+void STIMER_TenMillsectimerExpired(void)
+{
+	STIMER_StartTimer(TEN_MILLSEC_TIMER, (uint16_t)100, STIMER_TenMillsectimerExpired);
+	TenMillisecondsExpired = TRUE;
 }
