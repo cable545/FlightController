@@ -11,7 +11,6 @@
 #include "main.h"
 
 void GPIO_InitGpioA(void);
-void GPIO_InitGpioB(void);
 void GPIO_InitGpioC(void);
 
 #endif

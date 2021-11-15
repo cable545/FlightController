@@ -58,6 +58,8 @@ static void MX_TIM3_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+extern uint8_t OneSecondExpired;
+
 /* USER CODE END 0 */
 
 /**
@@ -74,7 +76,6 @@ int main(void)
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  
 
   LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_SYSCFG);
   LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
@@ -99,31 +100,34 @@ int main(void)
 //  MX_DMA_Init();
 //  MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
-//  STATUS_LEDS_Init();
-  DSHOT_Init(DSHOT600);
-  DWT->CTRL = 0x01;
+  STATUS_LEDS_Init();
+  delayInit();
+  RECEIVER_Init();
+  SYSTEM_InitSystick(100);
+//  BUZZER_Init();
+//  DSHOT_Init(DSHOT600);
   uint16_t data[16] = {500, 0, 0, 0};
+  uint32_t test = 0, result = 0;
 
-//  TIM1->CCR1 = 50;
-//  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
-//  HAL_TIM_Base_Start(&htim3);
-
+  STIMER_Init(NULL);
+  STIMER_OneSectimerExpired();
 
   /* USER CODE END 2 */
- 
- 
-
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+  	RECEIVER_ProcessCapturedValues();
 
-  	while(DWT->CYCCNT < 21000);
-  	DSHOT_Write(data);
-//  	HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_6);
-  	DWT->CYCCNT = 0;
-
+  	if(OneSecondExpired)
+  	{
+  		OneSecondExpired = FALSE;
+  		LED_G_TOGGLE;
+  	}
+//  	delayMillis(10);
 //  	DSHOT_Write(data);
+//  	BUZZER_BeepXTimers(5);
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -198,30 +202,40 @@ static void MX_TIM3_Init(void)
   
   /* TIM3_CH1_TRIG Init */
   LL_DMA_SetChannelSelection(DMA1, LL_DMA_STREAM_4, LL_DMA_CHANNEL_5);
+
   LL_DMA_SetDataTransferDirection(DMA1, LL_DMA_STREAM_4, LL_DMA_DIRECTION_MEMORY_TO_PERIPH);
+
   LL_DMA_SetStreamPriorityLevel(DMA1, LL_DMA_STREAM_4, LL_DMA_PRIORITY_LOW);
+
   LL_DMA_SetMode(DMA1, LL_DMA_STREAM_4, LL_DMA_MODE_NORMAL);
+
   LL_DMA_SetPeriphIncMode(DMA1, LL_DMA_STREAM_4, LL_DMA_PERIPH_NOINCREMENT);
+
   LL_DMA_SetMemoryIncMode(DMA1, LL_DMA_STREAM_4, LL_DMA_MEMORY_INCREMENT);
+
   LL_DMA_SetPeriphSize(DMA1, LL_DMA_STREAM_4, LL_DMA_PDATAALIGN_WORD);
+
   LL_DMA_SetMemorySize(DMA1, LL_DMA_STREAM_4, LL_DMA_MDATAALIGN_WORD);
+
   LL_DMA_DisableFifoMode(DMA1, LL_DMA_STREAM_4);
 
   /* USER CODE BEGIN TIM3_Init 1 */
   /* USER CODE END TIM3_Init 1 */
+  TIM_InitStruct.Prescaler = 84;
   TIM_InitStruct.CounterMode = LL_TIM_COUNTERMODE_UP;
+  TIM_InitStruct.Autoreload = 1;
   TIM_InitStruct.ClockDivision = LL_TIM_CLOCKDIVISION_DIV1;
   LL_TIM_Init(TIM3, &TIM_InitStruct);
-
+  LL_TIM_DisableARRPreload(TIM3);
   LL_TIM_SetClockSource(TIM3, LL_TIM_CLOCKSOURCE_INTERNAL);
-
+  LL_TIM_OC_EnablePreload(TIM3, LL_TIM_CHANNEL_CH1);
   TIM_OC_InitStruct.OCMode = LL_TIM_OCMODE_PWM1;
+  TIM_OC_InitStruct.OCState = LL_TIM_OCSTATE_DISABLE;
+  TIM_OC_InitStruct.OCNState = LL_TIM_OCSTATE_DISABLE;
+  TIM_OC_InitStruct.CompareValue = 0;
   TIM_OC_InitStruct.OCPolarity = LL_TIM_OCPOLARITY_HIGH;
-
   LL_TIM_OC_Init(TIM3, LL_TIM_CHANNEL_CH1, &TIM_OC_InitStruct);
   LL_TIM_OC_DisableFast(TIM3, LL_TIM_CHANNEL_CH1);
-  LL_TIM_OC_EnablePreload(TIM3, LL_TIM_CHANNEL_CH1); //
-
   LL_TIM_SetTriggerOutput(TIM3, LL_TIM_TRGO_RESET);
   LL_TIM_DisableMasterSlaveMode(TIM3);
   /* USER CODE BEGIN TIM3_Init 2 */
@@ -250,6 +264,12 @@ static void MX_DMA_Init(void)
   /* Init with LL driver */
   /* DMA controller clock enable */
   LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_DMA1);
+
+  /* DMA interrupt init */
+  /* DMA1_Stream4_IRQn interrupt configuration */
+  NVIC_SetPriority(DMA1_Stream4_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),0, 0));
+  NVIC_EnableIRQ(DMA1_Stream4_IRQn);
+
 }
 
 /**

@@ -46,8 +46,12 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "system.h"
+#include "software_timer.h"
 #include "dshot.h"
 #include "status_leds.h"
+#include "buzzer.h"
+#include "receiver.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -57,7 +61,8 @@ extern "C" {
 
 /* Exported constants --------------------------------------------------------*/
 /* USER CODE BEGIN EC */
-
+#define TRUE	1
+#define FALSE 0
 /* USER CODE END EC */
 
 /* Exported macro ------------------------------------------------------------*/
