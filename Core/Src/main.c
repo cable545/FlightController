@@ -103,9 +103,9 @@ int main(void)
   /* USER CODE BEGIN 2 */
   STATUS_LEDS_Init();
   delayInit();
-//  RECEIVER_Init();
+  RECEIVER_Init();
   SYSTEM_InitSystick(100);
-//  BUZZER_Init();
+  BUZZER_Init();
   DSHOT_Init(DSHOT600);
   uint16_t data[16] = {500, 0, 0, 0};
 
