@@ -83,11 +83,6 @@ static void RECEIVER_InitTimer(void)
 	LL_TIM_CC_SetDMAReqTrigger(RECEIVER_TIM, LL_TIM_CCDMAREQUEST_CC);
 }
 
-static uint8_t RECEIVER_IsSyncSignalValue(uint32_t value)
-{
-	return value > RECEIVER_CHANNEL_VALUE_COUNT_MAX;
-}
-
 static void RECEIVER_InitDma(void)
 {
 	LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_DMA1);
@@ -110,7 +105,23 @@ static void RECEIVER_InitDma(void)
 	NVIC_EnableIRQ(DMA1_Stream0_IRQn);
 }
 
-void RECEIVER_Init(void)
+static uint8_t RECEIVER_IsSyncSignalValue(uint32_t value)
+{
+	return value > RECEIVER_CHANNEL_VALUE_COUNT_MAX;
+}
+
+static void RECEIVER_PrepareCapturedValues(void)
+{
+	for(uint32_t i = 0; i < RECEIVER_CHANNEL_CNT; i++)
+	{
+		if(ProcessedValues[i] < 1000)
+			ProcessedValues[i] = 1000;
+		else if(ProcessedValues[i] > 2000)
+			ProcessedValues[i] = 2000;
+	}
+}
+
+uint16_t* RECEIVER_Init(void)
 {
 	BufferFull = FALSE;
 
@@ -121,6 +132,8 @@ void RECEIVER_Init(void)
 	LL_TIM_EnableDMAReq_CC1(RECEIVER_TIM);
 
 	LL_TIM_EnableCounter(RECEIVER_TIM);
+
+	return ProcessedValues;
 }
 
 uint8_t RECEIVER_ProcessCapturedValues(void)
@@ -157,6 +170,8 @@ uint8_t RECEIVER_ProcessCapturedValues(void)
 				ProcessedValues[i++] = tmpValues[j];
 			}
 		}
+
+		RECEIVER_PrepareCapturedValues();
 
 		BufferFull = FALSE;
 	}

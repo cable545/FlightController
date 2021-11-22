@@ -36,6 +36,7 @@ extern "C" {
 #include "stm32f4xx_ll_cortex.h"
 #include "stm32f4xx_ll_utils.h"
 #include "stm32f4xx_ll_pwr.h"
+#include "stm32f4xx_ll_spi.h"
 #include "stm32f4xx_ll_tim.h"
 #include "stm32f4xx.h"
 #include "stm32f4xx_ll_gpio.h"
@@ -52,6 +53,7 @@ extern "C" {
 #include "status_leds.h"
 #include "buzzer.h"
 #include "receiver.h"
+#include "mpu.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/

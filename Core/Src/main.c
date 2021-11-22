@@ -51,6 +51,7 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_DMA_Init(void);
 static void MX_TIM3_Init(void);
+static void MX_SPI3_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -60,6 +61,13 @@ static void MX_TIM3_Init(void);
 
 extern uint8_t OneSecondExpired;
 extern uint8_t TenMillisecondsExpired;
+
+uint16_t motorValues[4] = {0};
+
+static uint32_t map(uint32_t x, uint32_t in_min, uint32_t in_max, uint32_t out_min, uint32_t out_max)
+{
+  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
 
 /* USER CODE END 0 */
 
@@ -72,7 +80,6 @@ int main(void)
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
-  
 
   /* MCU Configuration--------------------------------------------------------*/
 
@@ -100,14 +107,18 @@ int main(void)
 //  MX_GPIO_Init();
 //  MX_DMA_Init();
 //  MX_TIM3_Init();
+//  MX_SPI3_Init();
   /* USER CODE BEGIN 2 */
+
+  uint16_t *receiverValues;
+
   STATUS_LEDS_Init();
   delayInit();
-  RECEIVER_Init();
+  receiverValues = RECEIVER_Init();
   SYSTEM_InitSystick(100);
   BUZZER_Init();
   DSHOT_Init(DSHOT600);
-  uint16_t data[16] = {500, 0, 0, 0};
+  DSHOT_Write(motorValues);
 
   STIMER_Init(NULL);
   STIMER_OneSectimerExpired();
@@ -115,13 +126,15 @@ int main(void)
   BUZZER_BeepXTimers(2);
 
   /* USER CODE END 2 */
+
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-  	RECEIVER_ProcessCapturedValues();
+  	if(RECEIVER_ProcessCapturedValues())
+  		motorValues[RECEIVER_THROTTLE_CHANNEL] = map(receiverValues[RECEIVER_THROTTLE_CHANNEL], 1000, 2000, DSHOT_MIN_THROTTLE, DSHOT_MAX_THROTTLE);
 
-		DSHOT_Write(data);
+  	DSHOT_Write(motorValues);
 		delayMicros(100);
 
   	if(OneSecondExpired)
@@ -147,7 +160,7 @@ void SystemClock_Config(void)
 
   if(LL_FLASH_GetLatency() != LL_FLASH_LATENCY_5)
   {
-  Error_Handler();  
+  Error_Handler();
   }
   LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE1);
   LL_RCC_HSE_Enable();
@@ -155,7 +168,7 @@ void SystemClock_Config(void)
    /* Wait till HSE is ready */
   while(LL_RCC_HSE_IsReady() != 1)
   {
-    
+
   }
   LL_RCC_PLL_ConfigDomain_SYS(LL_RCC_PLLSOURCE_HSE, LL_RCC_PLLM_DIV_8, 336, LL_RCC_PLLP_DIV_2);
   LL_RCC_PLL_Enable();
@@ -163,7 +176,7 @@ void SystemClock_Config(void)
    /* Wait till PLL is ready */
   while(LL_RCC_PLL_IsReady() != 1)
   {
-    
+
   }
   LL_RCC_SetAHBPrescaler(LL_RCC_SYSCLK_DIV_1);
   LL_RCC_SetAPB1Prescaler(LL_RCC_APB1_DIV_4);
@@ -173,11 +186,66 @@ void SystemClock_Config(void)
    /* Wait till System clock is ready */
   while(LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_PLL)
   {
-  
+
   }
   LL_Init1msTick(168000000);
   LL_SYSTICK_SetClkSource(LL_SYSTICK_CLKSOURCE_HCLK);
   LL_SetSystemCoreClock(168000000);
+}
+
+/**
+  * @brief SPI3 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_SPI3_Init(void)
+{
+
+  /* USER CODE BEGIN SPI3_Init 0 */
+
+  /* USER CODE END SPI3_Init 0 */
+
+  LL_SPI_InitTypeDef SPI_InitStruct = {0};
+
+  LL_GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+  /* Peripheral clock enable */
+  LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_SPI3);
+
+  LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_GPIOC);
+  /**SPI3 GPIO Configuration
+  PC10   ------> SPI3_SCK
+  PC11   ------> SPI3_MISO
+  PC12   ------> SPI3_MOSI
+  */
+  GPIO_InitStruct.Pin = LL_GPIO_PIN_10|LL_GPIO_PIN_11|LL_GPIO_PIN_12;
+  GPIO_InitStruct.Mode = LL_GPIO_MODE_ALTERNATE;
+  GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_VERY_HIGH;
+  GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
+  GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
+  GPIO_InitStruct.Alternate = LL_GPIO_AF_6;
+  LL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+  /* USER CODE BEGIN SPI3_Init 1 */
+
+  /* USER CODE END SPI3_Init 1 */
+  /* SPI3 parameter configuration*/
+  SPI_InitStruct.TransferDirection = LL_SPI_FULL_DUPLEX;
+  SPI_InitStruct.Mode = LL_SPI_MODE_MASTER;
+  SPI_InitStruct.DataWidth = LL_SPI_DATAWIDTH_8BIT;
+  SPI_InitStruct.ClockPolarity = LL_SPI_POLARITY_LOW;
+  SPI_InitStruct.ClockPhase = LL_SPI_PHASE_1EDGE;
+  SPI_InitStruct.NSS = LL_SPI_NSS_SOFT;
+  SPI_InitStruct.BaudRate = LL_SPI_BAUDRATEPRESCALER_DIV2;
+  SPI_InitStruct.BitOrder = LL_SPI_MSB_FIRST;
+  SPI_InitStruct.CRCCalculation = LL_SPI_CRCCALCULATION_DISABLE;
+  SPI_InitStruct.CRCPoly = 10;
+  LL_SPI_Init(SPI3, &SPI_InitStruct);
+  LL_SPI_SetStandard(SPI3, LL_SPI_PROTOCOL_MOTOROLA);
+  /* USER CODE BEGIN SPI3_Init 2 */
+
+  /* USER CODE END SPI3_Init 2 */
+
 }
 
 /**
@@ -201,7 +269,7 @@ static void MX_TIM3_Init(void)
   LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_TIM3);
 
   /* TIM3 DMA Init */
-  
+
   /* TIM3_CH1_TRIG Init */
   LL_DMA_SetChannelSelection(DMA1, LL_DMA_STREAM_4, LL_DMA_CHANNEL_5);
 
@@ -223,9 +291,9 @@ static void MX_TIM3_Init(void)
 
   /* USER CODE BEGIN TIM3_Init 1 */
   /* USER CODE END TIM3_Init 1 */
-  TIM_InitStruct.Prescaler = 84;
+  TIM_InitStruct.Prescaler = 84-LL_TIM_IC_FILTER_FDIV1_N2;
   TIM_InitStruct.CounterMode = LL_TIM_COUNTERMODE_UP;
-  TIM_InitStruct.Autoreload = 1;
+  TIM_InitStruct.Autoreload = 100-LL_TIM_IC_FILTER_FDIV1_N2;
   TIM_InitStruct.ClockDivision = LL_TIM_CLOCKDIVISION_DIV1;
   LL_TIM_Init(TIM3, &TIM_InitStruct);
   LL_TIM_DisableARRPreload(TIM3);
@@ -244,8 +312,8 @@ static void MX_TIM3_Init(void)
 
   /* USER CODE END TIM3_Init 2 */
   LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_GPIOA);
-  /**TIM3 GPIO Configuration  
-  PA6   ------> TIM3_CH1 
+  /**TIM3 GPIO Configuration
+  PA6   ------> TIM3_CH1
   */
   GPIO_InitStruct.Pin = LL_GPIO_PIN_6;
   GPIO_InitStruct.Mode = LL_GPIO_MODE_ALTERNATE;
@@ -257,10 +325,10 @@ static void MX_TIM3_Init(void)
 
 }
 
-/** 
+/**
   * Enable DMA controller clock
   */
-static void MX_DMA_Init(void) 
+static void MX_DMA_Init(void)
 {
 
   /* Init with LL driver */
@@ -285,6 +353,7 @@ static void MX_GPIO_Init(void)
   /* GPIO Ports Clock Enable */
   LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_GPIOH);
   LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_GPIOA);
+  LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_GPIOC);
 
 }
 
@@ -313,7 +382,7 @@ void Error_Handler(void)
   * @retval None
   */
 void assert_failed(uint8_t *file, uint32_t line)
-{ 
+{
   /* USER CODE BEGIN 6 */
   /* User can add his own implementation to report the file name and line number,
      tex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
