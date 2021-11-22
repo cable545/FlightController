@@ -113,17 +113,19 @@ int main(void)
   uint16_t *receiverValues;
 
   STATUS_LEDS_Init();
-  delayInit();
-  receiverValues = RECEIVER_Init();
+//  delayInit();
+//  receiverValues = RECEIVER_Init();
   SYSTEM_InitSystick(100);
-  BUZZER_Init();
-  DSHOT_Init(DSHOT600);
-  DSHOT_Write(motorValues);
+//  BUZZER_Init();
+//  DSHOT_Init(DSHOT600);
+  MPU_Init();
 
+//  DSHOT_Write(motorValues);
+//
   STIMER_Init(NULL);
   STIMER_OneSectimerExpired();
-
-  BUZZER_BeepXTimers(2);
+//
+//  BUZZER_BeepXTimers(2);
 
   /* USER CODE END 2 */
 
@@ -131,16 +133,18 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-  	if(RECEIVER_ProcessCapturedValues())
-  		motorValues[RECEIVER_THROTTLE_CHANNEL] = map(receiverValues[RECEIVER_THROTTLE_CHANNEL], 1000, 2000, DSHOT_MIN_THROTTLE, DSHOT_MAX_THROTTLE);
-
-  	DSHOT_Write(motorValues);
-		delayMicros(100);
+//  	if(RECEIVER_ProcessCapturedValues())
+//  		motorValues[RECEIVER_THROTTLE_CHANNEL] = map(receiverValues[RECEIVER_THROTTLE_CHANNEL], 1000, 2000, DSHOT_MIN_THROTTLE, DSHOT_MAX_THROTTLE);
+//
+//  	DSHOT_Write(motorValues);
+//		delayMicros(100);
 
   	if(OneSecondExpired)
   	{
   		OneSecondExpired = FALSE;
   		LED_G_TOGGLE;
+
+  		MPU_ReadWhoAmIReg();
   	}
 
     /* USER CODE END WHILE */

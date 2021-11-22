@@ -47,6 +47,8 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "spi.h"
+
 #include "system.h"
 #include "software_timer.h"
 #include "dshot.h"
@@ -54,6 +56,7 @@ extern "C" {
 #include "buzzer.h"
 #include "receiver.h"
 #include "mpu.h"
+
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/

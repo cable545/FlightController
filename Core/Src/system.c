@@ -7,11 +7,6 @@
 
 #include "system.h"
 
-void SysTick_Handler(void)
-{
-	STIMER_PollHandler();
-}
-
 void delayInit(void)
 {
 	CoreDebug->DEMCR &= ~CoreDebug_DEMCR_TRCENA_Msk;

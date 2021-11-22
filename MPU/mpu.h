@@ -11,5 +11,6 @@
 #include "main.h"
 
 void MPU_Init(void);
+uint8_t MPU_ReadWhoAmIReg(void);
 
 #endif
